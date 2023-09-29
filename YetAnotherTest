@@ -1,0 +1,34 @@
+# Produces visual of 2D cross section of magnetic field of a current loop
+
+import magpylib as magpy
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Define the current loop parameters
+current = 1  # current in Amperes
+diameter = np.sqrt(1/np.pi)  # diameter to match area A=1
+
+# Create a current loop source object
+source = magpy.current.Loop(current=current, diameter=diameter)
+
+X, Z = np.mgrid[-3:3:100j, -3:3:100j]
+grid = np.stack([X, np.zeros((100, 100)), Z], axis=2)
+
+# Evaluate the magnetic field at each observation point
+#pos_obs = grid # Transpose to get the correct shape
+B = source.getB(grid)
+
+print(B)
+
+# Reshape the magnetic field vectors to have the same shape as the grid
+Bx = B[:, :, 0].reshape(X.shape)
+Bz = B[:, :, 2].reshape(X.shape)
+
+# Create a 2D plot of the magnetic field vectors
+plt.quiver(X, Z, Bx, Bz, color='b')
+#plt.quiver(X, Z, color='b')
+plt.axis('equal')
+plt.title('2D cross-section of the magnetic field of a current loop')
+plt.xlabel('x')
+plt.ylabel('z')
+plt.show()
