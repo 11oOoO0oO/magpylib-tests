@@ -1,0 +1,32 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import magpylib as magpy
+
+fig, [ax1,ax2] = plt.subplots(1, 2, figsize=(10, 5))
+
+X, Z = np.mgrid[-3:3:100j, -3:3:100j]
+grid = np.stack([X, np.zeros((100, 100)), Z], axis=2)
+
+print(X)
+print(Z)
+
+# Compute B- and H-fields of a loop on the grid
+cyl = magpy.current.Loop(current=1, diameter=4)
+B = cyl.getB(grid)
+H = cyl.getH(grid)
+
+print(grid[:,:,0].shape, grid[:,:,1].shape, B[:,:,0].shape, B[:,:,1].shape)
+print(grid[:,:,2])
+print(grid[:,:,2].transpose())
+
+# Display field with Pyplot
+ax1.streamplot(grid[:,:, 0].transpose(), grid[:,:,2].transpose(), B[:,:,0].transpose(), B[:,:,2].transpose(), density=1.5,
+    )
+
+ax2.streamplot(grid[:,:,0].transpose(), grid[:,:,2].transpose(), H[:,:,0].transpose(), H[:,:,2].transpose(), density=1.5,
+    linewidth=1)
+
+plt.tight_layout()
+plt.show()
+
+#//
