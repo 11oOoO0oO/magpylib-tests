@@ -1,0 +1,27 @@
+# Cross section is rotated such that horizontal axis is z-axis and vertical axis is x-axis
+
+import numpy as np
+import matplotlib.pyplot as plt
+import magpylib as magpy
+
+fig, [ax1,ax2] = plt.subplots(1, 2, figsize=(10, 5))
+
+Y, Z = np.mgrid[-3:3:100j, -3:3:100j]
+grid = np.stack([np.zeros((100, 100)), Y, Z], axis=2)
+
+# Compute B- and H-fields of a loop on the grid
+cyl = magpy.current.Loop(current=1, diameter=4)
+B = cyl.getB(grid)
+H = cyl.getH(grid)
+
+# Display field with Pyplot
+ax1.streamplot(grid[:,:, 2], grid[:,:,1], B[:,:,2], B[:,:,1], density=1.5,
+    )
+
+ax2.streamplot(grid[:,:,2], grid[:,:,1], H[:,:,2], H[:,:,1], density=1.5,
+    linewidth=1)
+
+plt.tight_layout()
+plt.show()
+
+#//
