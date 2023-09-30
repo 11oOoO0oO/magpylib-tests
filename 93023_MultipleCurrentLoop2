@@ -1,0 +1,42 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import magpylib as magpy
+from scipy.spatial.transform import Rotation as R
+
+fig, [ax1,ax2] = plt.subplots(1, 2, figsize=(10, 5))
+
+X, Z = np.mgrid[-10:10:100j, -10:10:100j]
+grid = np.stack([X, np.zeros((100, 100)), Z], axis=2)
+
+# Compute B- and H-fields of a loop on the grid
+loop = magpy.current.Loop(
+    current=1, 
+    diameter=4,
+    orientation=R.from_euler("y", 90, degrees=True)
+    )
+another_loop = magpy.current.Loop(
+    current=1, 
+    diameter=4, 
+    orientation=R.from_euler("x", 90, degrees=True)
+    )
+
+coll = magpy.Collection(loop, another_loop)
+
+#magpy.show(coll)
+
+B = magpy.getB(coll, grid)
+H = magpy.getH(coll, grid)
+
+print(B.shape)
+
+# Display field with Pyplot
+ax1.streamplot(grid[:,:, 2], grid[:,:,0], B[:,:,2], B[:,:,0], density=1.5,
+    )
+
+ax2.streamplot(grid[:,:,2], grid[:,:,0], H[:,:,2], H[:,:,0], density=1.5,
+    linewidth=1)
+
+plt.tight_layout()
+plt.show()
+
+#//
