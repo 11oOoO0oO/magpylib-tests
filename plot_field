@@ -1,0 +1,35 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import magpylib as magpy
+from scipy.spatial.transform import Rotation as R
+
+def plot_field(*sources):
+
+    # Create display object
+    fig, [ax1,ax2] = plt.subplots(1, 2, figsize=(10, 5))
+
+    Y, Z = np.mgrid[-5:5:100j, -5:5:100j]
+    grid = np.stack([np.zeros((100, 100)), Y, Z], axis=2)
+
+    # Compute B- and H-fields of the source object collection and map to grid
+    coll = magpy.Collection(*sources)
+    B = coll.getB(grid)
+    H = coll.getH(grid)
+
+    # Display field with Pyplot
+    ax1.streamplot(grid[:,:,1].transpose(), grid[:,:,2].transpose(), B[:,:,1].transpose(), B[:,:,2].transpose(), density=1.5,
+        linewidth=1)
+
+    ax2.streamplot(grid[:,:,1].transpose(), grid[:,:,2].transpose(), H[:,:,1].transpose(), H[:,:,2].transpose(), density=1.5,
+        linewidth=1)
+
+    plt.tight_layout()
+    plt.show()
+
+cyl = magpy.current.Loop(current=1, diameter=4)
+another_loop = magpy.current.Loop(
+    current=1, 
+    diameter=4, 
+    orientation=R.from_euler("x", 90, degrees=True)
+    )
+plot_field(cyl, another_loop)
