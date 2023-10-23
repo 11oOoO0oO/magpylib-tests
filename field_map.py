@@ -75,10 +75,29 @@ class field_map:
         plot_field.plot_field(coll)
         plt.show()
 
+class test:
+    @staticmethod
+    def basic_test():
+        fm = field_map()
+        fm.corrected_field_map(1, 1, 1, 1)
+
+    @staticmethod
+    def advanced_test():
+        fm = field_map()
+        fm.field_map_generator()
+        fm.corrected_field_map(1, 1, 1, 1)
+    
+    @staticmethod
+    def multiple_regeneration_test():
+        fm = field_map()
+        for i in range(10):
+            fm.field_map_generator()
+            fm.corrected_field_map(1, 1, 1, 1)
+
 #Test
-fm = field_map()
-#fm.field_map_generator()
-fm.corrected_field_map(1, 1, 1, 1)
+test().basic_test()
+test().advanced_test()
+test().multiple_regeneration_test()
 
         
     
