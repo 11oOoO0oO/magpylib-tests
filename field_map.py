@@ -4,15 +4,32 @@ import magpylib as magpy
 from scipy.spatial.transform import Rotation as R
 from scipy.ndimage import gaussian_filter
 
+import plot_field
+
+class field_map_generator:
+    def __init__(self, low=-2, high=2):
+        self.map = np.random.uniform(low, high, (256, 256))
+
+    @staticmethod
+    def generator(low=-2, high=2):
+        yield np.random.uniform(low, high, (256, 256))
+
+    def __iter__(self):
+        self.generator = self.generator()
+    
+    def __next__(self):
+        return next(self.generator)
+
 class field_map:
     
-    def __init__(self, field_map=np.random.uniform(low=-2, high=2, size=(256, 256))):
-        self.field_map = field_map 
+    def __init__(self, field_map=field_map_generator()):
+        self.field_map = field_map.map
+        self.generator = iter(self.field_map)
 
     def field_map_generator(self, low=-2, high=2):
-        self.field_map = np.random.uniform(low, high, (256, 256))
+        self.field_map = next(self.generator)
 
-    def corrected_field_map(self, *currents):
+    def corrected_field_map(self, *currents, sigma=30):
         assert all([current > -2 and current < 2 for current in currents]), "All currents must be between -2 and 2."
 
         Y, Z = np.mgrid[-5:5:256j, -5:5:256j]
@@ -49,18 +66,19 @@ class field_map:
               "\n")
 
         corrected_B = self.field_map - B[:, :, 2]
-        gaussfilt = gaussian_filter(corrected_B, sigma=30)
+        gaussfilt = gaussian_filter(corrected_B, sigma=sigma)
         print("\nAnd here is the corrected field_map using the loop collection:\n\n" + 
               str(corrected_B) +  
               "\n")
 
         plt.imshow(gaussfilt, cmap='gray')
+        plot_field.plot_field(coll)
         plt.show()
 
 #Test
-"""fm = field_map()
-fm.field_map_generator()
-fm.corrected_field_map(1, 1, 1, 1)"""
+fm = field_map()
+#fm.field_map_generator()
+fm.corrected_field_map(1, 1, 1, 1)
 
         
     
