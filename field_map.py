@@ -71,7 +71,7 @@ class field_map:
               str(corrected_B) +  
               "\n")
 
-        plt.imshow(gaussfilt, cmap='gray')
+        plt.imshow(gaussfilt, cmap='gray', origin='lower')
         plot_field.plot_field(coll)
         plt.show()
 
@@ -79,7 +79,7 @@ class test:
     @staticmethod
     def basic_test():
         fm = field_map()
-        fm.corrected_field_map(1, 1, 1, 1)
+        fm.corrected_field_map(1, 1, 1, 1, sigma=29)
 
     @staticmethod
     def advanced_test():
@@ -96,8 +96,8 @@ class test:
 
 #Test
 test().basic_test()
-test().advanced_test()
-test().multiple_regeneration_test()
+#test().advanced_test()
+#test().multiple_regeneration_test()
 
         
     
