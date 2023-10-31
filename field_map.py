@@ -211,21 +211,8 @@ class test:
 #Test
 #test().basic_test()
 #test().advanced_test()
-test().multiple_regeneration_test()
+#test().multiple_regeneration_test()
 
 #test().lsq_basic_test()
 #test().lsq_advanced_test()
-test().lsq_multiple_regeneration_test()
-
-1.1554
-1.1556
-1.1564
-1.1521
-1.1545
-
-1.180
-1.180
-1.178
-1.181
-1.180
-    
+#test().lsq_multiple_regeneration_test()
