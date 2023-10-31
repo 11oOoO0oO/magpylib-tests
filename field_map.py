@@ -166,7 +166,7 @@ class field_map_lsq(field_map):
               f"Standard Deviation of corrected field_map: {np.std(corrected_B)}" +
               "\n")
         
-        plt.imshow(gaussfilt, cmap='gray', origin='lower')
+        plt.imshow(np.abs(gaussfilt), cmap='coolwarm', origin='lower')
         plt.show()
 
 #test class
@@ -213,6 +213,6 @@ class test:
 #test().advanced_test()
 #test().multiple_regeneration_test()
 
-#test().lsq_basic_test()
+test().lsq_basic_test()
 #test().lsq_advanced_test()
 #test().lsq_multiple_regeneration_test()
