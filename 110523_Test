@@ -1,0 +1,20 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import magpylib as magpy
+from scipy.spatial.transform import Rotation as R
+from scipy.ndimage import gaussian_filter
+
+Y, Z = np.mgrid[-5:5:256j, -5:5:256j]
+grid = np.stack([np.zeros((256, 256)), Y, Z], axis=2)
+
+loop = magpy.current.Loop(
+                current=1, 
+                diameter=5,
+                position=[0, 5, 0],
+            )
+
+B = loop.getB(grid)
+
+gaussfilt = gaussian_filter(B[:, :, 2], sigma=30)
+plt.imshow(np.abs(gaussfilt), cmap='coolwarm', origin='lower')
+plt.show()
