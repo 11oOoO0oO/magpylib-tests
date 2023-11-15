@@ -97,41 +97,41 @@ class field_map_lsq(field_map):
 
     @staticmethod
     def loop_map(*currents, x=128):
-        Y, Z = np.mgrid[-5:5:256j, -5:5:256j]
+        Y, Z = np.mgrid[-128:128:256j, -128:128:256j]
         grid = np.stack([np.zeros((256, 256)), Y, Z], axis=2)
 
         coll = magpy.Collection(
             magpy.current.Loop(
                 current=currents[0], 
-                diameter=5,
-                position=[x - 128, 0, 5],
+                diameter=128,
+                position=[x - 128, 0, 128],
             ),
             magpy.current.Loop(
                 current=currents[1], 
-                diameter=5,
-                position=[x - 128, 0, -5],
+                diameter=128,
+                position=[x - 128, 0, -128],
             ),
             magpy.current.Loop(
                 current=currents[2], 
-                diameter=5,
-                position=[x - 128, 5, 0],
+                diameter=128,
+                position=[x - 128, 128, 0],
                 orientation=R.from_euler('x', 90, degrees=True),
             ),
             magpy.current.Loop(
                 current=currents[3], 
-                diameter=5,
-                position=[x - 128, -5, 0],
+                diameter=128,
+                position=[x - 128, -128, 0],
                 orientation=R.from_euler('x', 90, degrees=True),
             ),
             magpy.current.Loop(
                 current=currents[4], 
-                diameter=5,
+                diameter=128,
                 position=[x - 123, 0, 0],
                 orientation=R.from_euler('z', 90, degrees=True),
             ),
             magpy.current.Loop(
                 current=currents[5], 
-                diameter=5,
+                diameter=128,
                 position=[x - 133, 0, 0],
                 orientation=R.from_euler('z', 90, degrees=True),
             )
@@ -149,41 +149,42 @@ class field_map_lsq(field_map):
         coll = magpy.Collection(
             magpy.current.Loop(
                 current=1, 
-                diameter=5,
+                diameter=100,
                 position=[0, 0, 5],
             ),
             magpy.current.Loop(
                 current=1, 
-                diameter=5,
+                diameter=100,
                 position=[0, 0, -5],
             ),
             magpy.current.Loop(
                 current=1, 
-                diameter=5,
+                diameter=100,
                 position=[0, 5, 0],
                 orientation=R.from_euler('x', 90, degrees=True),
             ),
             magpy.current.Loop(
                 current=1, 
-                diameter=5,
+                diameter=100,
                 position=[0, -5, 0],
                 orientation=R.from_euler('x', 90, degrees=True),
             ),
             magpy.current.Loop(
                 current=1, 
-                diameter=5,
+                diameter=100,
                 position=[5, 0, 0],
                 orientation=R.from_euler('z', 90, degrees=True),
             ),
             magpy.current.Loop(
                 current=1, 
-                diameter=5,
+                diameter=100,
                 position=[-5, 0, 0],
                 orientation=R.from_euler('z', 90, degrees=True),
             )
         )
 
         B1 = coll[0].getB(grid) * (42.58) * (10 ** 3)
+        print(B1[:, :, :, 2])
         B2 = coll[1].getB(grid) * (42.58) * (10 ** 3)
         B3 = coll[2].getB(grid) * (42.58) * (10 ** 3)
         B4 = coll[3].getB(grid) * (42.58) * (10 ** 3)
@@ -200,55 +201,54 @@ class field_map_lsq(field_map):
         
         self.lsq_currents = X
 
-    def print_corrected_field_map(self, x=128, sigma=30):
-        X, Y, Z = np.mgrid[-5:5:256j, -5:5:256j, -5:5:256j]
-        grid = np.stack([X, Y, Z], axis=3)
+    def print_corrected_field_map(self, x=5, sigma=30):
+        Y, Z = np.mgrid[-5:5:256j, -5:5:256j]
+        grid = np.stack([np.zeros((256, 256)), Y, Z], axis=2)
         
         coll = magpy.Collection(
             magpy.current.Loop(
                 current=self.lsq_currents[0], 
                 diameter=5,
-                position=[0, 0, 5],
+                position=[x - 5, 0, 5],
             ),
             magpy.current.Loop(
                 current=self.lsq_currents[1], 
                 diameter=5,
-                position=[0, 0, -5],
+                position=[x - 5, 0, -5],
             ),
             magpy.current.Loop(
                 current=self.lsq_currents[2], 
                 diameter=5,
-                position=[0, 5, 0],
+                position=[x - 5, 5, 0],
                 orientation=R.from_euler('x', 90, degrees=True),
             ),
             magpy.current.Loop(
                 current=self.lsq_currents[3], 
                 diameter=5,
-                position=[0, -5, 0],
+                position=[x - 5, -5, 0],
                 orientation=R.from_euler('x', 90, degrees=True),
             ),
             magpy.current.Loop(
                 current=self.lsq_currents[4], 
                 diameter=5,
-                position=[5, 0, 0],
+                position=[x, 0, 0],
                 orientation=R.from_euler('z', 90, degrees=True),
             ),
             magpy.current.Loop(
                 current=self.lsq_currents[5], 
                 diameter=5,
-                position=[-5, 0, 0],
+                position=[x - 10, 0, 0],
                 orientation=R.from_euler('z', 90, degrees=True),
             ),
         )
 
-        B = coll.getB(grid)
-        self.lsq_optimal = B[:, :, :, 2] * (42.58) * (10 ** 3)
+        B = coll.getB(grid) * (42.58) * (10 ** 3)
         print("\nHere are the B magnitudes produced by the optimal currents:\n\n" + 
               str(B) +  
               "\n")
         
-        corrected_B = self.field_map - self.lsq_optimal
-        gaussfilt = gaussian_filter(corrected_B[x, :, :, 2], sigma=sigma)
+        corrected_B = self.field_map[5 - x, :, :] - B[:, :, 2]
+        gaussfilt = gaussian_filter(corrected_B, sigma=sigma)
         print("\nAnd here is the corrected field_map using the loop collection:\n\n" + 
               str(corrected_B) +  
               "\n\n" +
@@ -283,6 +283,7 @@ class test:
     def lsq_basic_test():
         map = field_map_lsq()
         map.corrected_field_map()
+        map.print_corrected_field_map()
 
     @staticmethod
     def lsq_advanced_test():
@@ -302,8 +303,8 @@ class test:
 #test().advanced_test()
 #test().multiple_regeneration_test()
 
-#test().lsq_basic_test()
+test().lsq_basic_test()
 #test().lsq_advanced_test()
 #test().lsq_multiple_regeneration_test()
 
-field_map_lsq.loop_map(0, 0, 1, 0, 0, 0)
+#field_map_lsq.loop_map(0, 0, 0, 0, 0, 0, x=200)
