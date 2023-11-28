@@ -94,26 +94,17 @@ class lsq_optimizer:
         for coil in self.coils:
             bs.write_target_volume(coil, "coil", (10, 10, 10), (-5, -5, -5), 1, 1)
             fields, _ = bs.read_target_volume("coil")
-            temp.append(fields[:, :, :, 2] * 42.58)
+            temp.append(fields[:, :, :, 2].ravel() * 42.58)
 
-        temp = np.stack(temp, axis=3)
-        x = lsq_linear(temp.reshape(-1, self.numCoils), self.map.reshape(-1)).x
+        temp = np.stack(temp, axis=1)
+        x = lsq_linear(temp, self.map.ravel()).x
 
         print("\nHere are the currents that optimize the correction of the inputted field map:\n\n" + 
               str(x) +  
               "\n")
         
         self.lsq_currents = x
-
-        
-
-
-        
-
-        
             
-
-        
 
 # Test
 
@@ -126,3 +117,30 @@ optimizer.generateCoil("test4.txt", 1, 10, 0, -5, 0, 'x', 270)
 optimizer.generateCoil("test5.txt", 1, 10, 5, 0, 0, 'y', 90)
 optimizer.generateCoil("test6.txt", 1, 10, -5, 0, 0, 'y', 270)
 optimizer.optimizeMap()
+
+optimizer.generateCoil("output.txt", optimizer.lsq_currents[0], 10, 0, 0, 5, 'x', 0)
+optimizer.generateCoil("output2.txt", optimizer.lsq_currents[1], 10, 0, 0, -5, 'x', 0)
+optimizer.generateCoil("output3.txt", optimizer.lsq_currents[2], 10, 0, 5, 0, 'x', 90)
+optimizer.generateCoil("output4.txt", optimizer.lsq_currents[3], 10, 0, -5, 0, 'x', 270)
+optimizer.generateCoil("output5.txt", optimizer.lsq_currents[4], 10, 5, 0, 0, 'y', 90)
+optimizer.generateCoil("output6.txt", optimizer.lsq_currents[5], 10, -5, 0, 0, 'y', 270)
+
+bs.write_target_volume("output.txt", "output", (10, 10, 10), (-5, -5, -5), 1, 1)
+bs.write_target_volume("output2.txt", "output2", (10, 10, 10), (-5, -5, -5), 1, 1)
+bs.write_target_volume("output3.txt", "output3", (10, 10, 10), (-5, -5, -5), 1, 1)
+bs.write_target_volume("output4.txt", "output4", (10, 10, 10), (-5, -5, -5), 1, 1)
+bs.write_target_volume("output5.txt", "output5", (10, 10, 10), (-5, -5, -5), 1, 1)
+bs.write_target_volume("output6.txt", "output6", (10, 10, 10), (-5, -5, -5), 1, 1)
+
+fields, _ = bs.read_target_volume("output")
+fields2, _ = bs.read_target_volume("output2")
+fields3, _ = bs.read_target_volume("output3")
+fields4, _ = bs.read_target_volume("output4")
+fields5, _ = bs.read_target_volume("output5")
+fields6, _ = bs.read_target_volume("output6")
+
+fields += fields2 + fields3 + fields4 + fields5 + fields6
+
+optimized = optimizer.map - fields[:, :, :, 2]
+print(optimized)
+print(np.std(optimized))
