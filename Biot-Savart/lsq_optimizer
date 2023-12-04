@@ -16,9 +16,40 @@ class lsq_optimizer:
 
     def generateMap(self):
         self.map = np.random.uniform(-100, 100, (11, 11, 11))
+    
+    def generateZeroMap(self):
+        self.map = np.zeros((11, 11, 11))
 
     def generateOnesMap(self):
         self.map = np.ones((11, 11, 11))
+
+    def generateReverseMap(self):
+
+        optimizer.generateCoil("reverse.txt", 1, 10, 0, 0, 5, 'x', 0)
+        optimizer.generateCoil("reverse2.txt", 1, 10, 0, 0, -5, 'x', 0)
+        optimizer.generateCoil("reverse3.txt", 1, 10, 0, 5, 0, 'x', 90)
+        optimizer.generateCoil("reverse4.txt", 1, 10, 0, -5, 0, 'x', 270)
+        optimizer.generateCoil("reverse5.txt", 1, 10, 5, 0, 0, 'y', 90)
+        optimizer.generateCoil("reverse6.txt", 1, 10, -5, 0, 0, 'y', 270)
+
+        self.coils = list()
+
+        bs.write_target_volume("reverse.txt", "reverse", (10, 10, 10), (-5, -5, -5), 1, 1)
+        bs.write_target_volume("reverse2.txt", "reverse2", (10, 10, 10), (-5, -5, -5), 1, 1)
+        bs.write_target_volume("reverse3.txt", "reverse3", (10, 10, 10), (-5, -5, -5), 1, 1)
+        bs.write_target_volume("reverse4.txt", "reverse4", (10, 10, 10), (-5, -5, -5), 1, 1)
+        bs.write_target_volume("reverse5.txt", "reverse5", (10, 10, 10), (-5, -5, -5), 1, 1)
+        bs.write_target_volume("reverse6.txt", "reverse6", (10, 10, 10), (-5, -5, -5), 1, 1)
+
+        fields, _ = bs.read_target_volume("reverse")
+        fields2, _ = bs.read_target_volume("reverse2")
+        fields3, _ = bs.read_target_volume("reverse3")
+        fields4, _ = bs.read_target_volume("reverse4")
+        fields5, _ = bs.read_target_volume("reverse5")
+        fields6, _ = bs.read_target_volume("reverse6")
+
+        fields += fields2 + fields3 + fields4 + fields5 + fields6
+        self.map = fields[:, :, :, 2] / 10000 * 42.58 * 100000
 
     def generateCoil(self, filename, current, diameter, center_x, center_y, center_z, rotation_axis, rotation_angle):
 
@@ -49,18 +80,27 @@ class lsq_optimizer:
                 if rotation_angle:
                 # Rotate the point
 
-                    def rotate_point(point, axis, angle_degrees):
+                    def rotate_point(point, axis, angle_degrees, center):
                         """
                         Rotate a point around a specified axis by a given angle in degrees.
 
                         point: Tuple (x, y, z) representing the point.
                         axis: Axis of rotation ('x', 'y', or 'z').
                         angle_degrees: Angle of rotation in degrees.
+                        center: The center point about which to rotate.
 
                         returns a rotated point as a tuple (x, y, z).
                         """
                         angle_radians = math.radians(angle_degrees)
                         x, y, z = point
+                        cx, cy, cz = center
+
+                        # Translate point back to the origin
+                        x -= cx
+                        y -= cy
+                        z -= cz
+
+                        # Apply rotation
                         if axis == 'x':
                             rotation_matrix = np.array([
                                 [1, 0, 0],
@@ -79,11 +119,27 @@ class lsq_optimizer:
                                 [math.sin(angle_radians), math.cos(angle_radians), 0],
                                 [0, 0, 1]
                             ])
-                        return tuple(np.dot(rotation_matrix, [x, y, z]))
+
+                        rotated_point = np.dot(rotation_matrix, [x, y, z])
+
+                        # Translate point back to its original center
+                        return tuple(rotated_point + np.array([cx, cy, cz]))
                     
-                    x, y, z = rotate_point((x, y, z), rotation_axis, rotation_angle)
+                    x, y, z = rotate_point((x, y, z), rotation_axis, rotation_angle, (center_x, center_y, center_z))
 
                 file.write(f"{x},{y},{z},{current}\n")
+
+    def printMap(self):
+        assert self.numCoils, "Please generate a coil."
+
+        sumfields = 0
+
+        for coil in self.coils:
+            bs.write_target_volume(coil, coil, (10, 10, 10), (-5, -5, -5), 1, 1)
+            fields, _ = bs.read_target_volume(coil)
+            sumfields += fields[:, :, :, 2]
+
+        print(sumfields)
 
     def optimizeMap(self):
         assert self.map is not None, "Please set or generate a field map to correct."
@@ -94,7 +150,7 @@ class lsq_optimizer:
         for coil in self.coils:
             bs.write_target_volume(coil, "coil", (10, 10, 10), (-5, -5, -5), 1, 1)
             fields, _ = bs.read_target_volume("coil")
-            temp.append(fields[:, :, :, 2].ravel() * 42.58)
+            temp.append(fields[:, :, :, 2].ravel() / 10000 * 42.58 * 100000)
 
         temp = np.stack(temp, axis=1)
         x = lsq_linear(temp, self.map.ravel()).x
@@ -109,14 +165,36 @@ class lsq_optimizer:
 # Test
 
 optimizer = lsq_optimizer()
-optimizer.generateOnesMap()
+optimizer.generateReverseMap()
+
+optimizer.coils = list()
+
 optimizer.generateCoil("test.txt", 1, 10, 0, 0, 5, 'x', 0)
+
+"""bs.plot_coil("test.txt")
+bs.write_target_volume("test.txt", "test", (10, 10, 10), (-5, -5, -5), 1, 1)
+fields, positions = bs.read_target_volume("test")
+bs.plot_fields(fields, positions, which_plane='z', level=5, num_contours=50)
+
+"""
 optimizer.generateCoil("test2.txt", 1, 10, 0, 0, -5, 'x', 0)
 optimizer.generateCoil("test3.txt", 1, 10, 0, 5, 0, 'x', 90)
 optimizer.generateCoil("test4.txt", 1, 10, 0, -5, 0, 'x', 270)
 optimizer.generateCoil("test5.txt", 1, 10, 5, 0, 0, 'y', 90)
 optimizer.generateCoil("test6.txt", 1, 10, -5, 0, 0, 'y', 270)
 optimizer.optimizeMap()
+
+"""
+bs.plot_coil("test.txt")
+bs.plot_coil("test2.txt")
+bs.plot_coil("test3.txt")
+bs.plot_coil("test4.txt")
+bs.plot_coil("test5.txt")
+bs.plot_coil("test6.txt")
+
+"""
+
+optimizer.coils = list()
 
 optimizer.generateCoil("output.txt", optimizer.lsq_currents[0], 10, 0, 0, 5, 'x', 0)
 optimizer.generateCoil("output2.txt", optimizer.lsq_currents[1], 10, 0, 0, -5, 'x', 0)
@@ -140,7 +218,8 @@ fields5, _ = bs.read_target_volume("output5")
 fields6, _ = bs.read_target_volume("output6")
 
 fields += fields2 + fields3 + fields4 + fields5 + fields6
+temp = optimizer.map
+temp2 = fields[:, :, :, 2] / 10000 * 42.58 * 100000
 
-optimized = optimizer.map - fields[:, :, :, 2]
+optimized = temp - temp2
 print(optimized)
-print(np.std(optimized))
