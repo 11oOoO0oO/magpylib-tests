@@ -51,7 +51,7 @@ class lsq_optimizer:
         fields += fields2 + fields3 + fields4 + fields5 + fields6
         self.map = fields[:, :, :, 2] / 10000 * 42.58 * 100000
 
-    def generateCoil(self, filename, current, diameter, center_x, center_y, center_z, rotation_axis, rotation_angle):
+    def generateCoil(self, filename, current, diameter, center_x, center_y, center_z, rotation_axis='x', rotation_angle=0):
 
         """
         Generates the coordinates for a loop and writes them to a file.
@@ -141,14 +141,14 @@ class lsq_optimizer:
 
         print(sumfields)
 
-    def optimizeMap(self):
+    def optimizeMap(self, target_volume):
         assert self.map is not None, "Please set or generate a field map to correct."
         assert self.numCoils, "Please generate a coil."
 
         temp = list()
 
         for coil in self.coils:
-            bs.write_target_volume(coil, "coil", (10, 10, 10), (-5, -5, -5), 1, 1)
+            bs.write_target_volume(coil, "coil", target_volume, target_volume / 2 * -1, 1, 1)
             fields, _ = bs.read_target_volume("coil")
             temp.append(fields[:, :, :, 2].ravel() / 10000 * 42.58 * 100000)
 
@@ -160,10 +160,12 @@ class lsq_optimizer:
               "\n")
         
         self.lsq_currents = x
+        self.coils = list()
             
 
 # Test
 
+"""
 optimizer = lsq_optimizer()
 optimizer.generateReverseMap()
 
@@ -171,28 +173,12 @@ optimizer.coils = list()
 
 optimizer.generateCoil("test.txt", 1, 10, 0, 0, 5, 'x', 0)
 
-"""bs.plot_coil("test.txt")
-bs.write_target_volume("test.txt", "test", (10, 10, 10), (-5, -5, -5), 1, 1)
-fields, positions = bs.read_target_volume("test")
-bs.plot_fields(fields, positions, which_plane='z', level=5, num_contours=50)
-
-"""
 optimizer.generateCoil("test2.txt", 1, 10, 0, 0, -5, 'x', 0)
 optimizer.generateCoil("test3.txt", 1, 10, 0, 5, 0, 'x', 90)
 optimizer.generateCoil("test4.txt", 1, 10, 0, -5, 0, 'x', 270)
 optimizer.generateCoil("test5.txt", 1, 10, 5, 0, 0, 'y', 90)
 optimizer.generateCoil("test6.txt", 1, 10, -5, 0, 0, 'y', 270)
-optimizer.optimizeMap()
-
-"""
-bs.plot_coil("test.txt")
-bs.plot_coil("test2.txt")
-bs.plot_coil("test3.txt")
-bs.plot_coil("test4.txt")
-bs.plot_coil("test5.txt")
-bs.plot_coil("test6.txt")
-
-"""
+optimizer.optimizeMap((10, 10, 10))
 
 optimizer.coils = list()
 
@@ -223,3 +209,5 @@ temp2 = fields[:, :, :, 2] / 10000 * 42.58 * 100000
 
 optimized = temp - temp2
 print(optimized)
+
+"""
